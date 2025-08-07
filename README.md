@@ -43,9 +43,7 @@ Finbot/
 
 ---
 
-## 🧠 Methodology
-
-Key libraries:
+## Key libraries
 
 PySimpleGUI
 
