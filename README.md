@@ -45,12 +45,24 @@ Finbot/
 
 ## 🧠 Methodology
 
-- **TF-IDF + Cosine Similarity**: QA engine with a threshold sensitivity analysis (optimal: `0.1–0.2`)
-- **Prediction Models**:
-  - `CNN` – For volatile stocks (TSLA, NVDA)
-  - `LSTM` – For stable stocks (PLUG)
-- **SHAP**: KernelExplainer used for local explainability
-- **Sentiment Analysis**: Uses `TextBlob` on news headlines to provide Buy/Hold/Sell labels
+Key libraries:
+
+PySimpleGUI
+
+tensorflow, keras
+
+scikit-learn
+
+pandas, numpy
+
+shap
+
+textblob
+
+yfinance
+
+matplotlib
+
 
 ---
 
