@@ -36,7 +36,7 @@
   - `sentiment_analysis.py` – Investment sentiment via news headlines
   - `feedback_module.py` – Rating capture and export logic
 - `requirements.txt` – List of Python dependencies
-- `Finbot report.pdf` – Full academic dissertation
+- `Finbot report.pdf` – Full  report
 - `README.md` – Project documentation (this file)
 
 
