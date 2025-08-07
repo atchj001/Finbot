@@ -18,27 +18,27 @@
 
 ## 📁 Project Structure
 
-Finbot/
-├── data/
-│ └── question_bank.json # Curated Q&A with tiered answers
-├── models/
-│ ├── cnn_model.h5 # Trained CNN model
-│ ├── lstm_model.h5 # Trained LSTM model
-│ └── scaler.pkl # Scaler for preprocessing
-├── shap_visuals/
-│ └── sample_shap_output.png # Example SHAP explanation
-├── feedback/
-│ ├── feedback_log.json # Logs user ratings
-│ └── poor_ratings_export.xlsx # Exported poor responses
-├── src/
-│ ├── main.py # Main app launcher
-│ ├── qa_module.py # Question Answering logic
-│ ├── prediction_module.py # CNN/LSTM + SHAP prediction
-│ ├── sentiment_analysis.py # News sentiment scoring
-│ └── feedback_module.py # Logging + export handling
-├── requirements.txt # Python dependencies
-├── Finbot report.pdf # Full dissertation
-└── README.md # Project readme
+- `data/`
+  - `question_bank.json` – Curated Q&A dataset with tiered literacy responses
+- `models/`
+  - `cnn_model.h5` – Trained CNN model for stock forecasting
+  - `lstm_model.h5` – Trained LSTM model for comparative analysis
+  - `scaler.pkl` – Preprocessing scaler for normalizing input data
+- `shap_visuals/`
+  - `sample_shap_output.png` – Example SHAP explanation for transparency
+- `feedback/`
+  - `feedback_log.json` – Stores structured user feedback
+  - `poor_ratings_export.xlsx` – Export of negative responses for review
+- `src/`
+  - `main.py` – Main GUI application launcher
+  - `qa_module.py` – Retrieval-based question answering logic
+  - `prediction_module.py` – CNN & LSTM implementation + SHAP
+  - `sentiment_analysis.py` – Investment sentiment via news headlines
+  - `feedback_module.py` – Rating capture and export logic
+- `requirements.txt` – List of Python dependencies
+- `Finbot report.pdf` – Full academic dissertation
+- `README.md` – Project documentation (this file)
+
 
 
 ---
