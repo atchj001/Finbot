@@ -37,7 +37,7 @@
   - `feedback_module.py` – Rating capture and export logic
 - `requirements.txt` – List of Python dependencies
 - `Finbot report.pdf` – Full  report
-- `README.md` – Project documentation (this file)
+- `README.md` – Project documentation (this current file)
 
 
 
