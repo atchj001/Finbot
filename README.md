@@ -6,13 +6,13 @@
 
 ## 🚀 Features
 
-- **🧠 Literacy-Tiered Q&A** – Beginner and Advanced response modes based on user selection.
-- **📚 Retrieval-Based Question Answering** – Uses TF-IDF + cosine similarity with optimized thresholds.
-- **📈 Stock Price Prediction** – CNN & LSTM models trained on historical data.
-- **🧮 Explainable AI with SHAP** – Visualizes which data points influenced stock predictions.
-- **📰 Sentiment-Based Investment Suggestions** – Analyzes real-time news headlines.
-- **🖥️ PySimpleGUI Interface** – Clean, responsive GUI with tabs, chat bubbles, and charts.
-- **📊 Feedback Collection System** – Logs helpfulness ratings and exports poor responses for analysis.
+- **Literacy-Tiered Q&A** – Beginner and Advanced response modes based on user selection.
+- **Retrieval-Based Question Answering** – Uses TF-IDF + cosine similarity with optimized thresholds.
+- **Stock Price Prediction** – CNN & LSTM models trained on historical data.
+- **Explainable AI with SHAP** – Visualizes which data points influenced stock predictions.
+- **Sentiment-Based Investment Suggestions** – Analyzes real-time news headlines.
+- **PySimpleGUI Interface** – Clean, responsive GUI with tabs, chat bubbles, and charts.
+- **Feedback Collection System** – Logs helpfulness ratings and exports poor responses for analysis.
 
 ---
 
