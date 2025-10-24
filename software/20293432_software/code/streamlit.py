@@ -451,15 +451,22 @@ def chat_msg(role, text):
     with st.chat_message("assistant" if role=="assistant" else "user"):
         st.markdown(text)
 
+# UPDATED: store-only; rendering happens elsewhere
 def push_assistant(text):
     st.session_state.chat_history.append({"role":"assistant","content":text})
-    chat_msg("assistant", text)
     st.session_state.last_bot_response = text.strip()
 
 def push_user(text):
     st.session_state.chat_history.append({"role":"user","content":text})
-    chat_msg("user", text)
     st.session_state.last_user_query = text
+
+# NEW: render current turn immediately, then stop
+def render_current_turn_and_stop():
+    if st.session_state.last_user_query:
+        chat_msg("user", st.session_state.last_user_query)
+    if st.session_state.last_bot_response:
+        chat_msg("assistant", st.session_state.last_bot_response)
+    st.stop()
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -482,12 +489,9 @@ if nav == "💬 Chat":
 
     # Warm welcome on first load
     if len(st.session_state.chat_history) == 0:
-        push_assistant("Hi, I'm Finbot. I'm here to help you with financial information and analysis.")
-        push_assistant("Please enter **'bye'** to say goodbye.")
-        push_assistant("If you need assistance, enter **'help'**.")
-        push_assistant("After each response, you can rate if it was helpful!")
+        push_assistant("Hi, I'm Finbot. I'm here to help you with financial information and analysis. \n\n Please enter **'bye'** to say goodbye. \n\n If you need assistance, enter **'help'**. \n\n After each response, you can rate if it was helpful! ")
 
-    # Show chat history
+    # Show chat history (single renderer)
     for msg in st.session_state.chat_history:
         chat_msg(msg["role"], msg["content"])
 
@@ -497,38 +501,38 @@ if nav == "💬 Chat":
         # Save raw query for feedback linkage
         st.session_state.last_user_query = user_input
 
-        # 1) spell-correct (word-by-word like your app)
+        # 1) spell-correct
         ui = ' '.join([correct(w) for w in user_input.split()])  # :contentReference[oaicite:5]{index=5}
         push_user(user_input)
 
-        # 2) Name change / recognition (same logic as your app)
-        if check_name_change(ui):  # :contentReference[oaicite:6]{index=6}
+        # 2) Name change / recognition
+        if check_name_change(ui):
             new_name = name_change(ui)
             if new_name.strip():
                 st.session_state.user_name = new_name
                 push_assistant(f"- Finbot: Hi, {new_name}")
             else:
                 push_assistant("- Finbot: I couldn't catch the new name—try 'change my name to Alex'.")
-            st.stop()
+            render_current_turn_and_stop()
 
-        resp = name_response(ui, threshold=0.9)  # trigger memory line like your app
+        resp = name_response(ui, threshold=0.9)
         if resp != 'NOT FOUND':
             push_assistant(f"- Finbot: You're {st.session_state.user_name}, I have a great memory ┑(￣u ￣)┍")
-            st.stop()
+            render_current_turn_and_stop()
 
         # 3) Exit / utilities
         if ui.lower().strip() == "bye":
             push_assistant("Bye!")
-            st.stop()
+            render_current_turn_and_stop()
 
         if ui.lower() in ['feedback stats', 'show feedback', 'rating stats']:
             push_assistant(feedback_stats())
-            st.stop()
+            render_current_turn_and_stop()
 
         # 4) Wallet actions
         if re.search(r'\b(check|wallet)\b.*\b(balance|money)\b', ui.lower()):
             push_assistant(f"- Finbot: Your current wallet balance is: ${st.session_state.user_wallet:.2f}")
-            st.stop()
+            render_current_turn_and_stop()
 
         if ui.lower().startswith("add ") and "wallet" in ui.lower():
             nums = re.findall(r"([\d.]+)", ui)
@@ -536,7 +540,7 @@ if nav == "💬 Chat":
                 push_assistant(add_to_wallet(float(nums[0])))
             else:
                 push_assistant("- Finbot: Please provide a valid number.")
-            st.stop()
+            render_current_turn_and_stop()
 
         # 5) Buy/Sell/Price
         if ui.lower().startswith("buy stock"):
@@ -550,7 +554,7 @@ if nav == "💬 Chat":
                     push_assistant("- Finbot: Provide purchase amount.")
             else:
                 push_assistant("- Finbot: Try: 'Buy stock AAPL with 1000'")
-            st.stop()
+            render_current_turn_and_stop()
 
         if "current price" in ui.lower() or "stock price" in ui.lower():
             words = ui.upper().split()
@@ -560,7 +564,7 @@ if nav == "💬 Chat":
                 push_assistant(f"- Finbot: The current price for {ticker} is: ${price:.2f}")
             else:
                 push_assistant("- Finbot: Unable to retrieve price. Check ticker.")
-            st.stop()
+            render_current_turn_and_stop()
 
         if "portfolio" in ui.lower():
             df = get_portfolio_table()
@@ -569,7 +573,7 @@ if nav == "💬 Chat":
             else:
                 push_assistant("- Finbot: Here's your stock portfolio:")
                 st.dataframe(df, use_container_width=True)
-            st.stop()
+            render_current_turn_and_stop()
 
         # 6) Time / Today (from small_talk)
         if " time" in ui.lower() or ui.lower().strip()=="today":
@@ -583,7 +587,7 @@ if nav == "💬 Chat":
                 time_response('today')
             sys.stdout = old
             push_assistant(buf.getvalue().replace("- Skynet:", "- Finbot:"))
-            st.stop()
+            render_current_turn_and_stop()
 
         # 7) Investment advice (prediction + sentiment)
         if 'invest in' in ui.lower() and 'should i' in ui.lower():
@@ -592,7 +596,7 @@ if nav == "💬 Chat":
                 ticker = words[words.index("IN")+1]
             except Exception:
                 push_assistant("- Finbot: Please specify like 'Should I invest in AAPL?'")
-                st.stop()
+                render_current_turn_and_stop()
 
             with st.status(f"Analyzing {ticker}…", expanded=True) as status:
                 st.write("Running prediction model…")
@@ -622,7 +626,7 @@ if nav == "💬 Chat":
                            f"News Sentiment: {senti_advice} | Avg score: {avg:.2f}")
                 push_assistant(summary)
                 status.update(label="Analysis complete.", state="complete")
-            st.stop()
+            render_current_turn_and_stop()
 
         # 8) Explicit predict command in chat
         if ui.lower().startswith("predict stock"):
@@ -630,7 +634,7 @@ if nav == "💬 Chat":
             ticker = parts[-1] if len(parts)>=3 else None
             if not ticker:
                 push_assistant("- Finbot: Provide a ticker, e.g., 'Predict stock TSLA with CNN'")
-                st.stop()
+                render_current_turn_and_stop()
             models = ("CNN",) if st.session_state.model_choice=="CNN" else \
                      ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
             with st.status(f"Predicting {ticker}…", expanded=True) as status:
@@ -647,15 +651,15 @@ if nav == "💬 Chat":
                 else:
                     push_assistant("- Finbot: Could not generate predictions.")
                 status.update(label="Done.", state="complete")
-            st.stop()
+            render_current_turn_and_stop()
 
-        # 9) Small talk first, then QA by literacy level (mirrors your main) :contentReference[oaicite:8]{index=8} :contentReference[oaicite:9]{index=9}
+        # 9) Small talk first, then QA by literacy level
         resp = talk_response(ui, threshold=0.9)
         if resp != 'NOT FOUND':
             push_assistant(f"- Finbot: {resp}")
-            st.stop()
+            render_current_turn_and_stop()
 
-        # QA answers vary by literacy (Beginner vs Advanced like your flow)
+        # QA answers vary by literacy (Beginner vs Advanced)
         literacy_for_QA = "Advanced" if st.session_state.literacy == "Advanced" else "Beginner"
         resp2 = answer_Q(ui, threshold=0.1, user_financial_literacy=literacy_for_QA)
         if resp2 != 'NOT FOUND' and not resp2.startswith("Error"):
@@ -663,19 +667,23 @@ if nav == "💬 Chat":
         else:
             push_assistant("I'm sorry ˙◠˙ I don't quite understand. Try asking me to predict a stock price or inquire about market trends.")
 
+        # Ensure current-turn messages show immediately even on fall-through path
+        render_current_turn_and_stop()
+
     # Quick feedback buttons (writes JSON + poor_table.xlsx with last matched QA)
-    cols = st.columns(3)
+    cols = st.columns(2)
+
     with cols[0]:
-        if st.button("👍 Helpful"):
-            save_feedback(st.session_state.last_user_query, st.session_state.last_bot_response, "Good")
-            st.toast("Thanks for the positive feedback!", icon="✅")
-    with cols[1]:
         comments = st.text_input("Optional feedback note…", key="poor_comment")
         if st.button("👎 Not Helpful"):
             save_feedback(st.session_state.last_user_query, st.session_state.last_bot_response, "Poor", comments)
             save_poor_rating_to_excel(st.session_state.last_user_query, st.session_state.last_bot_response, comments)
             st.toast("Thanks — we recorded your feedback.", icon="📝")
-    with cols[2]:
+        elif st.button("👍 Helpful"):
+            save_feedback(st.session_state.last_user_query, st.session_state.last_bot_response, "Good")
+            st.toast("Thanks for the positive feedback!", icon="✅")
+            
+    with cols[1]:
         if st.button("📊 Feedback Stats"):
             st.info(feedback_stats())
 

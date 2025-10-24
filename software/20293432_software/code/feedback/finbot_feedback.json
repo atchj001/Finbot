@@ -182,5 +182,13 @@
         "rating": "Poor",
         "comments": "did not understand",
         "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-10-24 13:23:22",
+        "user_query": "",
+        "bot_response": "After each response, you can rate if it was helpful!",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
     }
 ]
