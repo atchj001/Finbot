@@ -190,5 +190,29 @@
         "rating": "Good",
         "comments": null,
         "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 15:51:30",
+        "user_query": "what are stocks",
+        "bot_response": "- Finbot: Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": "not really answered question",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-10-24 16:41:11",
+        "user_query": "",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you with financial information and analysis. \n\n Please enter **'bye'** to say goodbye. \n\n If you need assistance, enter **'help'**. \n\n After each response, you can rate if it was helpful!",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 16:41:23",
+        "user_query": "",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you with financial information and analysis. \n\n Please enter **'bye'** to say goodbye. \n\n If you need assistance, enter **'help'**. \n\n After each response, you can rate if it was helpful!",
+        "rating": "Poor",
+        "comments": "test",
+        "financial_literacy_level": "Beginner"
     }
 ]

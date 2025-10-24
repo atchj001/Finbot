@@ -7,6 +7,7 @@ import io
 import re
 import json
 import math
+import time  # for "thinking" UX + unique rating tokens
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -31,6 +32,9 @@ from keras.layers import Dense, Dropout, LSTM, Conv1D, MaxPooling1D, Flatten
 # Sentiment/news
 from textblob import TextBlob
 import requests
+
+# >>> SHAP import <<<
+import shap  # pip install shap
 
 # --- CONFIG / THEME ---
 st.set_page_config(page_title="Finbot (Streamlit)", page_icon="💸", layout="wide")
@@ -65,7 +69,8 @@ def init_state():
         enable_shap=False,
         model_choice="CNN",
         has_switched_level=False,
-        show_feedback=False,     # <-- for the popup feedback UI
+        show_feedback=False,     # used for 👎 flow text area
+        rate_token="0",          # unique id for rating widgets
     )
     for k,v in defaults.items():
         if k not in st.session_state:
@@ -337,7 +342,7 @@ def advice_from_sentiment(avg):
     if avg < -0.1: return "SELL - Negative sentiment detected."
     return "HOLD - Neutral sentiment."
 
-# --- PREDICTION  ---
+# --- PREDICTION + SHAP ---
 def predict_stock_price_with_xai(ticker, model_types=("CNN",), enable_shap=False, progress_cb=None):
     def step(msg):
         if progress_cb:
@@ -443,82 +448,108 @@ def predict_stock_price_with_xai(ticker, model_types=("CNN",), enable_shap=False
         next_price = scaler.inverse_transform(mdl.predict(real_data)).flatten()[0]
         predictions[name] = float(next_price)
 
-    # SHAP deliberately omitted for speed unless you really want to add it back
+    # --- SHAP (optional) ---
+    shap_figs = []
+    if enable_shap and models:
+        try:
+            rng = np.random.default_rng(7)
+            bg_n = min(64, x_train.shape[0])
+            smp_n = min(64, x_test.shape[0])
+            if bg_n >= 2 and smp_n >= 2:
+                bg_idx = rng.choice(x_train.shape[0], size=bg_n, replace=False)
+                smp_idx = rng.choice(x_test.shape[0], size=smp_n, replace=False)
+                background = x_train[bg_idx]     # (N, seq_len, 1)
+                sample = x_test[smp_idx]         # (M, seq_len, 1)
 
-    return predictions, results_txt.getvalue(), charts
+                for name, mdl in models.items():
+                    shap_values = None
+                    try:
+                        explainer = shap.DeepExplainer(mdl, background)
+                        shap_values = explainer.shap_values(sample)
+                    except Exception:
+                        try:
+                            explainer = shap.GradientExplainer(mdl, background)
+                            shap_values = explainer.shap_values(sample)
+                        except Exception:
+                            shap_values = None
+
+                    if shap_values is None:
+                        continue
+
+                    if isinstance(shap_values, list):
+                        shap_values = shap_values[0]
+
+                    # collapse feature dim (=1)
+                    shap_vals_2d = shap_values.reshape(shap_values.shape[0], shap_values.shape[1])
+                    sample_2d = sample.reshape(sample.shape[0], sample.shape[1])
+
+                    fig = plt.figure(figsize=(9, 4))
+                    shap.summary_plot(
+                        shap_vals_2d,
+                        sample_2d,
+                        feature_names=[f"t-{i}" for i in range(sample_2d.shape[1], 0, -1)],
+                        plot_type="bar",
+                        show=False
+                    )
+                    plt.title(f"SHAP summary — {name}")
+                    shap_figs.append(fig)
+        except Exception:
+            # Fail quietly if SHAP can't run in this environment
+            pass
+
+    return predictions, results_txt.getvalue(), charts + shap_figs
 
 # --- CHAT HELPERS ---
 def chat_msg(role, text):
     with st.chat_message("assistant" if role=="assistant" else "user"):
         st.markdown(text)
 
-# Store-only; rendering happens elsewhere
+# Store-only; history drives normal rendering
 def push_assistant(text):
     st.session_state.chat_history.append({"role":"assistant","content":text})
     st.session_state.last_bot_response = text.strip()
+    # unique token so rating buttons belong to the newest message
+    st.session_state["rate_token"] = str(int(time.time() * 1000))
 
 def push_user(text):
     st.session_state.chat_history.append({"role":"user","content":text})
     st.session_state.last_user_query = text
 
-# Render current turn immediately, then stop
-def render_current_turn_and_stop():
-    if st.session_state.last_user_query:
-        chat_msg("user", st.session_state.last_user_query)
-    if st.session_state.last_bot_response:
-        chat_msg("assistant", st.session_state.last_bot_response)
-    st.stop()
+# --- Fixed-position rating row (always above input) ---
+def rating_controls_bottom():
+    # Find the most recent assistant message, if any
+    last_assistant = None
+    for item in reversed(st.session_state.chat_history):
+        if item["role"] == "assistant":
+            last_assistant = item["content"]
+            break
 
-# --- Feedback popup button (new) ---
-def feedback_button_for_last_reply():
-    """Renders a 'Rate response' button under the last assistant message.
-    On click, opens a small popup/form to submit rating + optional note."""
-    if not st.session_state.chat_history:
-        return
-    if st.session_state.chat_history[-1]["role"] != "assistant":
-        return
-
+    disabled = last_assistant is None
     last_user = st.session_state.last_user_query
     last_bot = st.session_state.last_bot_response
+    token = st.session_state.get("rate_token", "0")
 
-    cols = st.columns([1, 8])
-    with cols[0]:
-        if st.button("⭐ Rate response", key="rate_response_btn"):
-            st.session_state.show_feedback = True
+    st.markdown("---")
+    cols = st.columns([1, 1, 6])
+    good_clicked = cols[0].button("👍 Helpful", key=f"rate_good_{token}", disabled=disabled)
+    bad_clicked  = cols[1].button("👎 Not Helpful", key=f"rate_bad_{token}", disabled=disabled)
 
-    popover = getattr(st, "popover", None)
-    container = None
+    if good_clicked and not disabled:
+        save_feedback(last_user, last_bot, "Good")
+        st.toast("Thanks for the positive feedback!", icon="✅")
 
-    if popover and st.session_state.get("show_feedback"):
-        with popover("Your feedback"):
-            container = st.container()
-    elif st.session_state.get("show_feedback"):
-        with st.expander("Your feedback", expanded=True):
-            container = st.container()
+    if bad_clicked and not disabled:
+        st.session_state["show_feedback"] = True
 
-    if container is not None:
-        with container:
-            with st.form("feedback_form", clear_on_submit=True):
-                rating = st.radio("How was the last response?",
-                                  ["👍 Helpful", "👎 Not Helpful"],
-                                  horizontal=True, index=0, key="fb_rating")
-                note = st.text_area("Optional note…", key="fb_note", height=100)
-                submitted = st.form_submit_button("Submit")
-
-            if submitted:
-                if rating == "👍 Helpful":
-                    save_feedback(last_user, last_bot, "Good")
-                    st.toast("Thanks for the positive feedback!", icon="✅")
-                else:
-                    save_feedback(last_user, last_bot, "Poor", note)
-                    save_poor_rating_to_excel(last_user, last_bot, note)
-                    st.toast("Thanks — we recorded your feedback.", icon="📝")
-                st.session_state.show_feedback = False
-                rerun = getattr(st, "rerun", None)
-                if callable(rerun):
-                    rerun()
-                else:
-                    st.experimental_rerun()
+    if st.session_state.get("show_feedback") and not disabled:
+        note = st.text_area("Tell us what missed (optional):", key=f"rate_note_{token}", height=100)
+        submit = st.button("Submit feedback", key=f"rate_submit_{token}")
+        if submit:
+            save_feedback(last_user, last_bot, "Poor", note)
+            save_poor_rating_to_excel(last_user, last_bot, note)
+            st.session_state["show_feedback"] = False
+            st.toast("Thanks — we recorded your feedback.", icon="📝")
+            (getattr(st, "rerun", None) or st.experimental_rerun)()
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -530,7 +561,6 @@ with st.sidebar:
     st.text_input("Your name", key="user_name")
     st.checkbox("Enable SHAP (slower)", key="enable_shap")
     st.selectbox("Default Model", ["LSTM","CNN","Both"], key="model_choice")
-    #st.text_input("NewsAPI key (optional)", key="api_key_news")
     st.divider()
     st.markdown("**Wallet**")
     st.metric("Balance", f"${st.session_state.user_wallet:.2f}")
@@ -547,55 +577,63 @@ if nav == "💬 Chat":
     for msg in st.session_state.chat_history:
         chat_msg(msg["role"], msg["content"])
 
-    # Show compact feedback button/popup under the latest assistant message
-    feedback_button_for_last_reply()
+    # Fixed rating bar sits ABOVE the input, every run
+    rating_controls_bottom()
 
     # Input
     user_input = st.chat_input("Type your message…")
     if user_input:
-        # Save raw query for feedback linkage
-        st.session_state.last_user_query = user_input
+        # Echo user's message immediately
+        chat_msg("user", user_input)
 
-        # 1) spell-correct
-        ui = ' '.join([correct(w) for w in user_input.split()])  # :contentReference[oaicite:5]{index=5}
+        # Assistant "thinking…" bubble (replaced later by the real answer)
+        with st.chat_message("assistant"):
+            assistant_placeholder = st.empty()
+            assistant_placeholder.markdown("⌛️ **Thinking…**")
+
+        # Save to state
+        st.session_state.last_user_query = user_input
         push_user(user_input)
 
+        # 1) spell-correct
+        ui = ' '.join([correct(w) for w in user_input.split()])
+
+        def reply(text):
+            """Replace 'Thinking…' with real response, store, and stop this run."""
+            assistant_placeholder.markdown(text)
+            push_assistant(text)
+            st.stop()
+
         # 2) Name change / recognition
-        if check_name_change(ui): 
+        if check_name_change(ui):
             new_name = name_change(ui)
             if new_name.strip():
                 st.session_state.user_name = new_name
-                push_assistant(f"- Finbot: Hi, {new_name}")
+                reply(f"- Finbot: Hi, {new_name}")
             else:
-                push_assistant("- Finbot: I couldn't catch the new name—try 'change my name to Alex'.")
-            render_current_turn_and_stop()
+                reply("- Finbot: I couldn't catch the new name—try 'change my name to Alex'.")
 
-        resp = name_response(ui, threshold=0.9) 
+        resp = name_response(ui, threshold=0.9)
         if resp != 'NOT FOUND':
-            push_assistant(f"- Finbot: You're {st.session_state.user_name}, I have a great memory ┑(￣u ￣)┍")
-            render_current_turn_and_stop()
+            reply(f"- Finbot: You're {st.session_state.user_name}, I have a great memory ┑(￣u ￣)┍")
 
         # 3) Exit / utilities
         if ui.lower().strip() == "bye":
-            push_assistant("Bye!")
-            render_current_turn_and_stop()
+            reply("Bye!")
 
         if ui.lower() in ['feedback stats', 'show feedback', 'rating stats']:
-            push_assistant(feedback_stats())
-            render_current_turn_and_stop()
+            reply(feedback_stats())
 
         # 4) Wallet actions
         if re.search(r'\b(check|wallet)\b.*\b(balance|money)\b', ui.lower()):
-            push_assistant(f"- Finbot: Your current wallet balance is: ${st.session_state.user_wallet:.2f}")
-            render_current_turn_and_stop()
+            reply(f"- Finbot: Your current wallet balance is: ${st.session_state.user_wallet:.2f}")
 
         if ui.lower().startswith("add ") and "wallet" in ui.lower():
             nums = re.findall(r"([\d.]+)", ui)
             if nums:
-                push_assistant(add_to_wallet(float(nums[0])))
+                reply(add_to_wallet(float(nums[0])))
             else:
-                push_assistant("- Finbot: Please provide a valid number.")
-            render_current_turn_and_stop()
+                reply("- Finbot: Please provide a valid number.")
 
         # 5) Buy/Sell/Price
         if ui.lower().startswith("buy stock"):
@@ -604,36 +642,34 @@ if nav == "💬 Chat":
                 ticker = parts[2]
                 nums = re.findall(r"([\d.]+)", ui)
                 if nums:
-                    push_assistant(buy_stock(ticker, float(nums[0])))
+                    reply(buy_stock(ticker, float(nums[0])))
                 else:
-                    push_assistant("- Finbot: Provide purchase amount.")
+                    reply("- Finbot: Provide purchase amount.")
             else:
-                push_assistant("- Finbot: Try: 'Buy stock AAPL with 1000'")
-            render_current_turn_and_stop()
+                reply("- Finbot: Try: 'Buy stock AAPL with 1000'")
 
         if "current price" in ui.lower() or "stock price" in ui.lower():
             words = ui.upper().split()
             ticker = words[-1]
             price = get_current_stock_price(ticker)
             if isinstance(price,(int,float)):
-                push_assistant(f"- Finbot: The current price for {ticker} is: ${price:.2f}")
+                reply(f"- Finbot: The current price for {ticker} is: ${price:.2f}")
             else:
-                push_assistant("- Finbot: Unable to retrieve price. Check ticker.")
-            render_current_turn_and_stop()
+                reply("- Finbot: Unable to retrieve price. Check ticker.")
 
         if "portfolio" in ui.lower():
             df = get_portfolio_table()
             if df.empty:
-                push_assistant("- Finbot: Your stock portfolio is empty.")
+                reply("- Finbot: Your stock portfolio is empty.")
             else:
-                push_assistant("- Finbot: Here's your stock portfolio:")
+                assistant_placeholder.markdown("- Finbot: Here's your stock portfolio:")
                 st.dataframe(df, use_container_width=True)
-            render_current_turn_and_stop()
+                push_assistant("- Finbot: Here's your stock portfolio:")
+                st.stop()
 
         # 6) Time / Today (from small_talk)
         if " time" in ui.lower() or ui.lower().strip()=="today":
             buf = io.StringIO()
-            # small_talk prints to stdout;
             import sys
             old = sys.stdout; sys.stdout = buf
             if " time" in ui.lower():
@@ -641,8 +677,7 @@ if nav == "💬 Chat":
             else:
                 time_response('today')
             sys.stdout = old
-            push_assistant(buf.getvalue().replace("- Skynet:", "- Finbot:"))
-            render_current_turn_and_stop()
+            reply(buf.getvalue().replace("- Skynet:", "- Finbot:"))
 
         # 7) Investment advice (prediction + sentiment)
         if 'invest in' in ui.lower() and 'should i' in ui.lower():
@@ -650,80 +685,74 @@ if nav == "💬 Chat":
                 words = ui.upper().split()
                 ticker = words[words.index("IN")+1]
             except Exception:
-                push_assistant("- Finbot: Please specify like 'Should I invest in AAPL?'")
-                render_current_turn_and_stop()
+                reply("- Finbot: Please specify like 'Should I invest in AAPL?'")
 
-            with st.status(f"Analyzing {ticker}…", expanded=True) as status:
-                st.write("Running prediction model…")
-                models = ("CNN",) if st.session_state.model_choice=="CNN" else \
-                         ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
-                def prog(m): st.write(m)
-                preds, logs, charts = predict_stock_price_with_xai(
-                    ticker, models, enable_shap=st.session_state.enable_shap, progress_cb=prog
-                )
-                price_now = get_current_stock_price(ticker) or float("nan")
-                best = next(iter(preds.values()), None)
-                change_pct = ((best - price_now)/price_now*100) if (best and price_now>0) else float("nan")
-                advice = "BUY" if change_pct>10 else "SELL" if change_pct<-10 else "HOLD"
-                st.write(logs)
-                for fig in charts:
-                    st.pyplot(fig, clear_figure=True)
+            with st.spinner("Analyzing data and building prediction…"):
+                with st.status(f"Analyzing {ticker}…", expanded=True) as status:
+                    st.write("Running prediction model…")
+                    models = ("CNN",) if st.session_state.model_choice=="CNN" else \
+                             ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
+                    def prog(m): st.write(m)
+                    preds, logs, charts = predict_stock_price_with_xai(
+                        ticker, models, enable_shap=st.session_state.enable_shap, progress_cb=prog
+                    )
+                    price_now = get_current_stock_price(ticker) or float("nan")
+                    best = next(iter(preds.values()), None)
+                    change_pct = ((best - price_now)/price_now*100) if (best and price_now>0) else float("nan")
+                    advice = "BUY" if change_pct>10 else "SELL" if change_pct<-10 else "HOLD"
+                    st.write(logs)
+                    for fig in charts:
+                        st.pyplot(fig, clear_figure=True)
 
-                status.update(label="Running news sentiment…")
-                headlines = fetch_news(st.session_state.api_key_news, ticker) if st.session_state.api_key_news else []
-                scores = analyze_sentiment(headlines)
-                avg = overall_sentiment(scores)
-                senti_advice = advice_from_sentiment(avg)
+                    status.update(label="Running news sentiment…")
+                    headlines = fetch_news(st.session_state.api_key_news, ticker) if st.session_state.api_key_news else []
+                    scores = analyze_sentiment(headlines)
+                    avg = overall_sentiment(scores)
+                    senti_advice = advice_from_sentiment(avg)
 
-                summary = (f"Advice: {advice}\n"
-                           f"Current Price: ${price_now:.2f}\n"
-                           f"Predicted Price: ${best:.2f} (Change: {change_pct:.2f}%)\n"
-                           f"News Sentiment: {senti_advice} | Avg score: {avg:.2f}")
-                push_assistant(summary)
-                status.update(label="Analysis complete.", state="complete")
-            render_current_turn_and_stop()
+                    summary = (f"Advice: {advice}\n"
+                               f"Current Price: ${price_now:.2f}\n"
+                               f"Predicted Price: ${best:.2f} (Change: {change_pct:.2f}%)\n"
+                               f"News Sentiment: {senti_advice} | Avg score: {avg:.2f}")
+                    status.update(label="Analysis complete.", state="complete")
+            reply(summary)
 
         # 8) Explicit predict command in chat
         if ui.lower().startswith("predict stock"):
             parts = ui.upper().split()
             ticker = parts[-1] if len(parts)>=3 else None
             if not ticker:
-                push_assistant("- Finbot: Provide a ticker, e.g., 'Predict stock TSLA with CNN'")
-                render_current_turn_and_stop()
-            models = ("CNN",) if st.session_state.model_choice=="CNN" else \
-                     ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
-            with st.status(f"Predicting {ticker}…", expanded=True) as status:
-                def prog(m): st.write(m)
-                preds, logs, charts = predict_stock_price_with_xai(
-                    ticker, models, enable_shap=st.session_state.enable_shap, progress_cb=prog
-                )
-                st.write(logs)
-                for fig in charts:
-                    st.pyplot(fig, clear_figure=True)
-                if preds:
-                    lines = [f"{m}: ${v:.2f}" for m,v in preds.items()]
-                    push_assistant("Prediction results for next day:\n" + "\n".join(lines))
-                else:
-                    push_assistant("- Finbot: Could not generate predictions.")
-                status.update(label="Done.", state="complete")
-            render_current_turn_and_stop()
+                reply("- Finbot: Provide a ticker, e.g., 'Predict stock TSLA with CNN'")
+            with st.spinner("Predicting…"):
+                models = ("CNN",) if st.session_state.model_choice=="CNN" else \
+                         ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
+                with st.status(f"Predicting {ticker}…", expanded=True) as status:
+                    def prog(m): st.write(m)
+                    preds, logs, charts = predict_stock_price_with_xai(
+                        ticker, models, enable_shap=st.session_state.enable_shap, progress_cb=prog
+                    )
+                    st.write(logs)
+                    for fig in charts:
+                        st.pyplot(fig, clear_figure=True)
+                    if preds:
+                        lines = [f"{m}: ${v:.2f}" for m,v in preds.items()]
+                        status.update(label="Done.", state="complete")
+                        reply("Prediction results for next day:\n" + "\n".join(lines))
+                    else:
+                        status.update(label="Done.", state="complete")
+                        reply("- Finbot: Could not generate predictions.")
 
         # 9) Small talk first, then QA by literacy level
         resp = talk_response(ui, threshold=0.9)
         if resp != 'NOT FOUND':
-            push_assistant(f"- Finbot: {resp}")
-            render_current_turn_and_stop()
+            reply(f"- Finbot: {resp}")
 
-        # QA answers vary by literacy (Beginner vs Advanced)
         literacy_for_QA = "Advanced" if st.session_state.literacy == "Advanced" else "Beginner"
         resp2 = answer_Q(ui, threshold=0.1, user_financial_literacy=literacy_for_QA)
         if resp2 != 'NOT FOUND' and not resp2.startswith("Error"):
-            push_assistant(f"- Finbot: {resp2}")
+            reply(f"- Finbot: {resp2}")
         else:
-            push_assistant("I'm sorry ˙◠˙ I don't quite understand. Try asking me to predict a stock price or inquire about market trends.")
-
-        # Ensure current-turn messages show immediately even on fall-through path
-        render_current_turn_and_stop()
+            reply("I'm sorry ˙◠˙ I don't quite understand. Try asking me to predict a stock price or inquire about market trends.")
 
 elif nav == "📊 Portfolio":
     st.header("Portfolio Management")
@@ -763,8 +792,10 @@ elif nav == "📊 Portfolio":
         mode = st.radio("Sell mode", ["All","Shares","Amount ($)"], horizontal=True)
         ss_shares = ss_amount = None
         if mode == "Shares":
+            st.caption("Select the number of shares to sell.")
             ss_shares = st.number_input("Number of shares", min_value=0.0, step=0.1, value=0.0, key="sell_shares")
         elif mode == "Amount ($)":
+            st.caption("Sell by dollar amount at current price.")
             ss_amount = st.number_input("Dollar amount", min_value=0.0, step=50.0, value=0.0, key="sell_amount")
         if st.button("Sell", type="secondary"):
             st.write(sell_stock(ss_t, shares=ss_shares if mode=="Shares" else None,
@@ -806,7 +837,7 @@ elif nav == "📈 Stock Analysis":
                 models = ("CNN",) if st.session_state.model_choice=="CNN" else \
                          ("LSTM",) if st.session_state.model_choice=="LSTM" else ("LSTM","CNN")
                 with st.status(f"Predicting {symbol.upper()}…", expanded=True) as status:
-                    def prog(msg): st.write(msg)
+                    def prog(m): st.write(m)
                     preds, logs, charts = predict_stock_price_with_xai(
                         symbol, models, enable_shap=st.session_state.enable_shap, progress_cb=prog
                     )
