@@ -336,7 +336,7 @@ def advice_from_sentiment(avg):
     if avg < -0.1: return "SELL - Negative sentiment detected."
     return "HOLD - Neutral sentiment."
 
-# --- PREDICTION (epochs reduced by default) ---
+# --- PREDICTION  ---
 def predict_stock_price_with_xai(ticker, model_types=("CNN",), enable_shap=False, progress_cb=None):
     def step(msg):
         if progress_cb:
@@ -471,7 +471,7 @@ with st.sidebar:
     st.text_input("Your name", key="user_name")
     st.checkbox("Enable SHAP (slower)", key="enable_shap")
     st.selectbox("Default Model", ["LSTM","CNN","Both"], key="model_choice")
-    st.text_input("NewsAPI key (optional)", key="api_key_news")
+    #st.text_input("NewsAPI key (optional)", key="api_key_news")
     st.divider()
     st.markdown("**Wallet**")
     st.metric("Balance", f"${st.session_state.user_wallet:.2f}")
@@ -571,10 +571,10 @@ if nav == "💬 Chat":
                 st.dataframe(df, use_container_width=True)
             st.stop()
 
-        # 6) Time / Today (from small_talk, but replace Skynet label) :contentReference[oaicite:7]{index=7}
+        # 6) Time / Today (from small_talk)
         if " time" in ui.lower() or ui.lower().strip()=="today":
             buf = io.StringIO()
-            # small_talk prints to stdout; capture and map Skynet→Finbot
+            # small_talk prints to stdout;
             import sys
             old = sys.stdout; sys.stdout = buf
             if " time" in ui.lower():
