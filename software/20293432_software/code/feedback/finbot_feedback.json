@@ -1,0 +1,218 @@
+[
+    {
+        "timestamp": "2025-03-23 00:49:25",
+        "user_query": "show feedback",
+        "bot_response": "",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-23 00:50:25",
+        "user_query": "show feedback",
+        "bot_response": "",
+        "rating": "Poor",
+        "comments": "could have been better",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-24 20:47:51",
+        "user_query": "bluefield",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-24 23:54:05",
+        "user_query": "how are you",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-24 23:55:24",
+        "user_query": "bluefield",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "testing",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-24 23:56:53",
+        "user_query": "bluefield",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "test",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 00:00:37",
+        "user_query": "bluefield",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "testing",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 00:02:44",
+        "user_query": "how are you",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "hello how are you",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 00:03:47",
+        "user_query": "how are you",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "test",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 01:16:54",
+        "user_query": "what is my name",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "how are you test",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 01:18:08",
+        "user_query": "tesing",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "trying",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-03-25 21:36:40",
+        "user_query": "how are you",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "qwerty",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 22:44:51",
+        "user_query": "what time is it?",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "timeeee test",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-03-25 22:45:45",
+        "user_query": "bluefield",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "bluefield test",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-04-05 21:28:09",
+        "user_query": "check my balance",
+        "bot_response": "The balance at the beginning of the year 2021 was $30 million and at the end of the year it was $18 million.",
+        "rating": "Poor",
+        "comments": "not letting me check balance",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-04-08 14:35:29",
+        "user_query": "how are you",
+        "bot_response": "I'm fine thank you",
+        "rating": "Poor",
+        "comments": "not what I wanted",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-04-09 19:11:04",
+        "user_query": "dghtuyj",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you.",
+        "rating": "Poor",
+        "comments": "question not answered",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-04-11 19:10:12",
+        "user_query": "check my balance",
+        "bot_response": "The balance at the beginning of the year 2021 was $30 million and at the end of the year it was $18 million. Balance at beginning of year 2021 was $30 million and, after charge-offs, recoveries, and provisions for credit losses, the balance at end of year was $18 million.",
+        "rating": "Poor",
+        "comments": "I was asking for my wallet balance",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-04-14 17:27:12",
+        "user_query": "gfdhjgkyhgs",
+        "bot_response": "I'm sorry \u02d9\u25e0\u02d9 I don't quite understand. Try asking me to predict a stock price or inquire about market trends.",
+        "rating": "Poor",
+        "comments": "it was an accident",
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-04-14 18:43:00",
+        "user_query": "what are stocks",
+        "bot_response": "Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": "did not understand",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-04-14 18:44:29",
+        "user_query": "what are stocks",
+        "bot_response": "Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": null,
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-04-14 18:46:05",
+        "user_query": "what are stocks",
+        "bot_response": "Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": "did not understand",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-04-14 18:59:19",
+        "user_query": "what are stocks",
+        "bot_response": "Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": "did not understand",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-10-24 13:23:22",
+        "user_query": "",
+        "bot_response": "After each response, you can rate if it was helpful!",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 15:51:30",
+        "user_query": "what are stocks",
+        "bot_response": "- Finbot: Growth stocks typically trade at higher multiples due to anticipated rapid earnings expansion, whereas value stocks are assessed based on low price-to-earnings or price-to-book ratios relative to intrinsic value. Analyzing these requires fundamental analysis, discounted cash flow models, and a strong understanding of market cycles.",
+        "rating": "Poor",
+        "comments": "not really answered question",
+        "financial_literacy_level": "Advanced"
+    },
+    {
+        "timestamp": "2025-10-24 16:41:11",
+        "user_query": "",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you with financial information and analysis. \n\n Please enter **'bye'** to say goodbye. \n\n If you need assistance, enter **'help'**. \n\n After each response, you can rate if it was helpful!",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 16:41:23",
+        "user_query": "",
+        "bot_response": "Hi, I'm Finbot. I'm here to help you with financial information and analysis. \n\n Please enter **'bye'** to say goodbye. \n\n If you need assistance, enter **'help'**. \n\n After each response, you can rate if it was helpful!",
+        "rating": "Poor",
+        "comments": "test",
+        "financial_literacy_level": "Beginner"
+    }
+]

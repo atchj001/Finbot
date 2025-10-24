@@ -1,0 +1,9 @@
+{
+    "wallet_balance": 800.0,
+    "stocks": {
+        "META": {
+            "shares": 0.6811989100817438,
+            "avg_price": 734.0
+        }
+    }
+}
