@@ -64,7 +64,8 @@ def init_state():
         api_key_news=os.getenv("NEWS_API_KEY", '9491467042934eeb9a7fa58400031b8a'),
         enable_shap=False,
         model_choice="CNN",
-        has_switched_level=False
+        has_switched_level=False,
+        show_feedback=False,     # <-- for the popup feedback UI
     )
     for k,v in defaults.items():
         if k not in st.session_state:
@@ -451,7 +452,7 @@ def chat_msg(role, text):
     with st.chat_message("assistant" if role=="assistant" else "user"):
         st.markdown(text)
 
-# UPDATED: store-only; rendering happens elsewhere
+# Store-only; rendering happens elsewhere
 def push_assistant(text):
     st.session_state.chat_history.append({"role":"assistant","content":text})
     st.session_state.last_bot_response = text.strip()
@@ -460,13 +461,64 @@ def push_user(text):
     st.session_state.chat_history.append({"role":"user","content":text})
     st.session_state.last_user_query = text
 
-# NEW: render current turn immediately, then stop
+# Render current turn immediately, then stop
 def render_current_turn_and_stop():
     if st.session_state.last_user_query:
         chat_msg("user", st.session_state.last_user_query)
     if st.session_state.last_bot_response:
         chat_msg("assistant", st.session_state.last_bot_response)
     st.stop()
+
+# --- Feedback popup button (new) ---
+def feedback_button_for_last_reply():
+    """Renders a 'Rate response' button under the last assistant message.
+    On click, opens a small popup/form to submit rating + optional note."""
+    if not st.session_state.chat_history:
+        return
+    if st.session_state.chat_history[-1]["role"] != "assistant":
+        return
+
+    last_user = st.session_state.last_user_query
+    last_bot = st.session_state.last_bot_response
+
+    cols = st.columns([1, 8])
+    with cols[0]:
+        if st.button("⭐ Rate response", key="rate_response_btn"):
+            st.session_state.show_feedback = True
+
+    popover = getattr(st, "popover", None)
+    container = None
+
+    if popover and st.session_state.get("show_feedback"):
+        with popover("Your feedback"):
+            container = st.container()
+    elif st.session_state.get("show_feedback"):
+        with st.expander("Your feedback", expanded=True):
+            container = st.container()
+
+    if container is not None:
+        with container:
+            with st.form("feedback_form", clear_on_submit=True):
+                rating = st.radio("How was the last response?",
+                                  ["👍 Helpful", "👎 Not Helpful"],
+                                  horizontal=True, index=0, key="fb_rating")
+                note = st.text_area("Optional note…", key="fb_note", height=100)
+                submitted = st.form_submit_button("Submit")
+
+            if submitted:
+                if rating == "👍 Helpful":
+                    save_feedback(last_user, last_bot, "Good")
+                    st.toast("Thanks for the positive feedback!", icon="✅")
+                else:
+                    save_feedback(last_user, last_bot, "Poor", note)
+                    save_poor_rating_to_excel(last_user, last_bot, note)
+                    st.toast("Thanks — we recorded your feedback.", icon="📝")
+                st.session_state.show_feedback = False
+                rerun = getattr(st, "rerun", None)
+                if callable(rerun):
+                    rerun()
+                else:
+                    st.experimental_rerun()
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -495,6 +547,9 @@ if nav == "💬 Chat":
     for msg in st.session_state.chat_history:
         chat_msg(msg["role"], msg["content"])
 
+    # Show compact feedback button/popup under the latest assistant message
+    feedback_button_for_last_reply()
+
     # Input
     user_input = st.chat_input("Type your message…")
     if user_input:
@@ -506,7 +561,7 @@ if nav == "💬 Chat":
         push_user(user_input)
 
         # 2) Name change / recognition
-        if check_name_change(ui):
+        if check_name_change(ui): 
             new_name = name_change(ui)
             if new_name.strip():
                 st.session_state.user_name = new_name
@@ -515,7 +570,7 @@ if nav == "💬 Chat":
                 push_assistant("- Finbot: I couldn't catch the new name—try 'change my name to Alex'.")
             render_current_turn_and_stop()
 
-        resp = name_response(ui, threshold=0.9)
+        resp = name_response(ui, threshold=0.9) 
         if resp != 'NOT FOUND':
             push_assistant(f"- Finbot: You're {st.session_state.user_name}, I have a great memory ┑(￣u ￣)┍")
             render_current_turn_and_stop()
@@ -669,23 +724,6 @@ if nav == "💬 Chat":
 
         # Ensure current-turn messages show immediately even on fall-through path
         render_current_turn_and_stop()
-
-    # Quick feedback buttons (writes JSON + poor_table.xlsx with last matched QA)
-    cols = st.columns(2)
-
-    with cols[0]:
-        comments = st.text_input("Optional feedback note…", key="poor_comment")
-        if st.button("👎 Not Helpful"):
-            save_feedback(st.session_state.last_user_query, st.session_state.last_bot_response, "Poor", comments)
-            save_poor_rating_to_excel(st.session_state.last_user_query, st.session_state.last_bot_response, comments)
-            st.toast("Thanks — we recorded your feedback.", icon="📝")
-        elif st.button("👍 Helpful"):
-            save_feedback(st.session_state.last_user_query, st.session_state.last_bot_response, "Good")
-            st.toast("Thanks for the positive feedback!", icon="✅")
-            
-    with cols[1]:
-        if st.button("📊 Feedback Stats"):
-            st.info(feedback_stats())
 
 elif nav == "📊 Portfolio":
     st.header("Portfolio Management")
