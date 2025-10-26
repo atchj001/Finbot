@@ -214,5 +214,61 @@
         "rating": "Poor",
         "comments": "test",
         "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:03",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:05",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:06",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:07",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:07",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:08",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
+    },
+    {
+        "timestamp": "2025-10-24 17:42:08",
+        "user_query": "hey",
+        "bot_response": "- Finbot: how's it going?",
+        "rating": "Good",
+        "comments": null,
+        "financial_literacy_level": "Beginner"
     }
 ]
